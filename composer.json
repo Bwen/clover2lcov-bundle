@@ -1,0 +1,20 @@
+{
+    "name": "bwen/clover2lcov-bundle",
+    "description": "Symfony command to convert clover code coverage format to lcov",
+    "type": "symfony-bundle",
+    "license": "MIT",
+    "version": "0.2.0",
+    "keywords": ["symfony-bundle","symfony","bundle","clover", "lcov", "convert", "coverage"],
+    "minimum-stability": "dev",
+    "require": {
+        "php": ">=8",
+        "ext-simplexml": "*",
+        "symfony/console": "^5.3",
+        "symfony/framework-bundle": "^5.3"
+    },
+    "autoload": {
+        "psr-4": {
+            "Bwen\\Clover2LcovBundle\\": "src/"
+        }
+    }
+}
