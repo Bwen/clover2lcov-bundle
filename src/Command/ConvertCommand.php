@@ -5,6 +5,7 @@ namespace Bwen\Clover2LcovBundle\Command;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
+use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
 use Symfony\Component\Filesystem\Filesystem;
@@ -24,6 +25,7 @@ class ConvertCommand extends Command
             ->setDescription('Converts a clover file to a lcov file')
             ->addArgument('source', InputArgument::REQUIRED, 'Path to clover source file to be converted')
             ->addArgument('target', InputArgument::OPTIONAL, 'Path to the lcov target file to be generated. Default: ./lcov')
+            ->addOption('replace-path', 'r', InputOption::VALUE_REQUIRED, 'Replaces the given path in the lcov file for token "SF:", Ex: /var/www/html|/github/workspace')
         ;
     }
 
@@ -33,6 +35,12 @@ class ConvertCommand extends Command
         $source = realpath($input->getArgument('source'));
         if (!$source) {
             $io->error('Please specify a valid source path to the clover file to be converted');
+        }
+
+        $replacePath = [];
+        $replacePathOption = $input->getOption('replace-path');
+        if ($replacePathOption) {
+            $replacePath = explode('|', $replacePathOption);
         }
 
         $target = $input->getArgument('target');
@@ -48,8 +56,13 @@ class ConvertCommand extends Command
 
         $cloverXML = simplexml_load_file($source);
         foreach ($cloverXML->project->file as $fileInfo) {
+            $filePath = $fileInfo['name'];
+            if (!empty($replacePath)) {
+                $filePath = str_replace($replacePath[0], $replacePath[1] ?? '', $filePath);
+            }
+
             $this->filesystem->appendToFile($target, "TN:\n");
-            $this->filesystem->appendToFile($target, "SF:{$fileInfo['name']}\n");
+            $this->filesystem->appendToFile($target, "SF:$filePath\n");
             $this->filesystem->appendToFile($target, "FNF:{$fileInfo->metrics['methods']}\n");
             $this->filesystem->appendToFile($target, "FNH:{$fileInfo->metrics['coveredmethods']}\n");
 
