@@ -7,10 +7,16 @@ use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
+use Symfony\Component\Filesystem\Filesystem;
 
 class ConvertCommand extends Command
 {
     protected static $defaultName = 'convert:clover2lcov';
+
+    public function __construct(private Filesystem $filesystem)
+    {
+        parent::__construct();
+    }
 
     protected function configure()
     {
@@ -31,16 +37,21 @@ class ConvertCommand extends Command
 
         $target = $input->getArgument('target');
         if (!$target) {
-            $target = 'lcov';
+            $target = './lcov.info';
         }
 
-        $lines = [];
+        if (!$this->filesystem->exists($target)) {
+            $pathInfo = pathinfo($target);
+            $this->filesystem->mkdir($pathInfo['dirname']);
+        }
+        file_put_contents($target, "");
+
         $cloverXML = simplexml_load_file($source);
         foreach ($cloverXML->project->file as $fileInfo) {
-            $lines[] = 'TN:';
-            $lines[] = 'SF:' . $fileInfo['name'];
-            $lines[] = 'FNF:' . $fileInfo->metrics['methods'];
-            $lines[] = 'FNH:' . $fileInfo->metrics['coveredmethods'];
+            $this->filesystem->appendToFile($target, "TN:\n");
+            $this->filesystem->appendToFile($target, "SF:{$fileInfo['name']}\n");
+            $this->filesystem->appendToFile($target, "FNF:{$fileInfo->metrics['methods']}\n");
+            $this->filesystem->appendToFile($target, "FNH:{$fileInfo->metrics['coveredmethods']}\n");
 
             foreach ($fileInfo->line as $line) {
                 $lineNumber = (int)$line['num'];
@@ -49,19 +60,19 @@ class ConvertCommand extends Command
                 if (isset($line['type']) && $line['type'] == 'method') {
                     $functionName = (string)$line['name'];
 
-                    $lines[] = "FN:$lineNumber,$functionName";
-                    $lines[] = "FNDA:$numberExecution,$functionName";
+                    $this->filesystem->appendToFile($target, "FN:$lineNumber,$functionName\n");
+                    $this->filesystem->appendToFile($target, "FNDA:$numberExecution,$functionName\n");
                 } else {
-                    $lines[] = "DA:$lineNumber,$numberExecution";
+                    $this->filesystem->appendToFile($target, "DA:$lineNumber,$numberExecution\n");
                 }
             }
 
-            $lines[] = 'LF:' . $fileInfo->metrics['statements'];
-            $lines[] = 'LH:' . $fileInfo->metrics['coveredstatements'];
-            $lines[] = "end_of_record";
+            $this->filesystem->appendToFile($target, "LF:{$fileInfo->metrics['statements']}\n");
+            $this->filesystem->appendToFile($target, "LH:{$fileInfo->metrics['coveredstatements']}\n");
+            $this->filesystem->appendToFile($target, "end_of_record\n");
         }
 
-        file_put_contents($target, implode("\n", $lines));
+        $io->success("Lcov file created successfully at: $target");
         return ExitCode::SUCCESS;
     }
 }

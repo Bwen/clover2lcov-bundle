@@ -3,14 +3,21 @@
     "description": "Symfony command to convert clover code coverage format to lcov",
     "type": "symfony-bundle",
     "license": "MIT",
-    "version": "0.2.0",
+    "version": "0.3.0",
     "keywords": ["symfony-bundle","symfony","bundle","clover", "lcov", "convert", "coverage"],
-    "minimum-stability": "dev",
+    "authors": [
+        {
+            "name": "Philippe Guilbault",
+            "email": "philippe.guilbault@gmail.com"
+        }
+    ],
+    "prefer-stable": true,
     "require": {
         "php": ">=8",
         "ext-simplexml": "*",
         "symfony/console": "^5.3",
-        "symfony/framework-bundle": "^5.3"
+        "symfony/framework-bundle": "^5.3",
+        "symfony/filesystem": "^5.3"
     },
     "autoload": {
         "psr-4": {
